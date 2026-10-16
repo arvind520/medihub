@@ -1,0 +1,14 @@
+/**
+ * FILE: client/src/index.css
+ * PURPOSE: Global stylesheet. The @tailwind directives inject
+ *          Tailwind's base, components, and utility classes.
+ */
+ @tailwind base;
+ @tailwind components;
+ @tailwind utilities;
+ 
+ /* Optional: clean default browser styling */
+ body {
+   margin: 0;
+   font-family: system-ui, -apple-system, sans-serif;
+ }
