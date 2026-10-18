@@ -1,18 +1,41 @@
 /**
  * FILE: client/src/App.jsx
- * PURPOSE: Root component of our React app.
- *          For Phase 0, it just proves our frontend works.
- *          Later we'll add routing here.
+ * PURPOSE: Sets up React Router.
+ *          Includes a `ProtectedRoute` component that forces
+ *          the user to sign in before viewing certain pages.
  */
-function App() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-sky-50">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-sky-700">MediHelp</h1>
-        <p className="mt-2 text-gray-600">Frontend is working ✅</p>
-      </div>
-    </div>
-  );
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "@clerk/clerk-react";
+import Home from "./pages/Home";
+import Dashboard from "./pages/Dashboard";
+
+// A wrapper for routes that require login
+function ProtectedRoute({ children }) {
+  const { isSignedIn, isLoaded } = useAuth();
+
+  // Wait for Clerk to load to avoid flashing the login screen
+  if (!isLoaded) return <div className="p-8 text-center">Loading...</div>;
+
+  // If not signed in, redirect to home
+  if (!isSignedIn) return <Navigate to="/" replace />;
+
+  return children;
 }
 
-export default App;
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </BrowserRouter>
+  );
+}
