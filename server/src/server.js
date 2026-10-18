@@ -19,6 +19,8 @@ import dotenv from "dotenv";
 import { connectDB } from "./config/db.js";
 import healthRoutes from "./routes/health.routes.js";
 import { notFound, errorHandler } from "./middleware/errorHandler.js";
+import { clerkMiddleware } from "@clerk/express";
+import userRoutes from "./routes/user.routes.js";
 
 // ---- 1. Load environment variables from .env -------------------------------
 dotenv.config();
@@ -30,6 +32,11 @@ const app = express();
 
 // helmet: sets secure HTTP headers (X-Frame-Options, CSP, etc.)
 app.use(helmet());
+
+// 👇 ADD THIS LINE HERE 👇
+// clerkMiddleware() reads the Authorization header (Bearer token)
+// and attaches Clerk auth data to `req.auth`.
+app.use(clerkMiddleware());
 
 // cors: allows requests ONLY from our frontend origin
 app.use(
@@ -67,6 +74,8 @@ app.use((req, _res, next) => {
 
 // Health check
 app.use("/api/health", healthRoutes);
+
+app.use("/api/users", userRoutes);
 
 // (Phase 1+) We'll mount /api/events, /api/users, etc. here later.
 

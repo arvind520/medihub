@@ -6,9 +6,33 @@
  */
 import { useUser, UserButton } from "@clerk/clerk-react";
 import { Link } from "react-router-dom";
+import { useState } from "react";
+import { useAuth } from "@clerk/clerk-react";
 
 export default function Dashboard() {
   const { user } = useUser();
+
+  const { getToken } = useAuth();
+  const [backendRes, setBackendRes] = useState(null);
+
+  const testBackend = async () => {
+    try {
+      // 1. Get the JWT token from Clerk
+      const token = await getToken();
+
+      // 2. Send it to the backend
+      const res = await fetch("http://localhost:5000/api/users/me", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+      setBackendRes(data);
+    } catch (err) {
+      setBackendRes({ error: err.message });
+    }
+  };
 
   return (
     <div className="min-h-screen p-8 bg-gray-50">
@@ -37,6 +61,18 @@ export default function Dashboard() {
           </p>
         </div>
       </div>
+      <button
+        onClick={testBackend}
+        className="mt-4 bg-blue-600 text-white px-4 py-2 rounded"
+      >
+        Test Backend Auth
+      </button>
+
+      {backendRes && (
+        <pre className="mt-4 bg-gray-800 text-green-400 p-4 rounded text-sm overflow-auto">
+          {JSON.stringify(backendRes, null, 2)}
+        </pre>
+      )}
     </div>
   );
 }
