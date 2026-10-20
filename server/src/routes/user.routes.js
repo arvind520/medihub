@@ -4,6 +4,7 @@
  */
 import { Router } from "express";
 import { getAuth } from "@clerk/express";
+import User from "../models/User.js";
 
 const router = Router();
 
@@ -22,6 +23,46 @@ router.get("/me", (req, res) => {
     message: "Authenticated successfully on the backend!",
     clerkUserId: userId,
   });
+});
+
+/**
+ * PUT /api/users/role
+ * PROTECTED: Sets the user's role to 'patient' or 'helper'.
+ */
+router.put("/role", async (req, res, next) => {
+  try {
+    // 1. Manually get the auth state
+    const { userId } = getAuth(req);
+
+    // 2. If no userId, the user is not logged in
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const { role } = req.body;
+
+    // Validate the role
+    if (!["patient", "helper"].includes(role)) {
+      return res.status(400).json({ error: "Invalid role" });
+    }
+
+    // 3. Update the user in MongoDB
+    const updatedUser = await User.findOneAndUpdate(
+      { clerkId: userId },
+      { role },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res
+        .status(404)
+        .json({ error: "User not found in DB. Did the webhook fail?" });
+    }
+
+    res.json({ success: true, user: updatedUser });
+  } catch (err) {
+    next(err); // Pass to our global error handler
+  }
 });
 
 export default router;

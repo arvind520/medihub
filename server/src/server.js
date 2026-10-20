@@ -21,6 +21,7 @@ import healthRoutes from "./routes/health.routes.js";
 import { notFound, errorHandler } from "./middleware/errorHandler.js";
 import { clerkMiddleware } from "@clerk/express";
 import userRoutes from "./routes/user.routes.js";
+import webhookRoutes from "./routes/webhook.routes.js";
 
 // ---- 1. Load environment variables from .env -------------------------------
 dotenv.config();
@@ -33,6 +34,8 @@ const app = express();
 // helmet: sets secure HTTP headers (X-Frame-Options, CSP, etc.)
 app.use(helmet());
 
+app.use("/api/webhooks", webhookRoutes);
+
 // 👇 ADD THIS LINE HERE 👇
 // clerkMiddleware() reads the Authorization header (Bearer token)
 // and attaches Clerk auth data to `req.auth`.
@@ -42,7 +45,9 @@ app.use(clerkMiddleware());
 app.use(
   cors({
     origin: process.env.CLIENT_URL || "http://localhost:5173",
-    credentials: true, // allow cookies/auth headers
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // 👈 Explicitly allow PUT
+    allowedHeaders: ["Content-Type", "Authorization"], // 👈 Explicitly allow Auth header
   })
 );
 

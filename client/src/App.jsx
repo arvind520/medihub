@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
+import RoleSelect from "./pages/RoleSelect";
 
 // A wrapper for routes that require login
 function ProtectedRoute({ children }) {
@@ -32,6 +33,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/select-role"
+          element={
+            <ProtectedRoute>
+              <RoleSelect />
             </ProtectedRoute>
           }
         />

@@ -73,6 +73,13 @@ export default function Dashboard() {
           {JSON.stringify(backendRes, null, 2)}
         </pre>
       )}
+
+      <Link
+        to="/select-role"
+        className="mt-4 inline-block bg-gray-200 px-4 py-2 rounded"
+      >
+        Change Role
+      </Link>
     </div>
   );
 }
