@@ -8,29 +8,19 @@ import { getAuth } from "@clerk/express";
 const router = Router();
 
 /**
- * Middleware to protect routes using Clerk's newer getAuth() method.
- */
-const requireAuth = (req, res, next) => {
-  const { userId } = getAuth(req);
-
-  if (!userId) {
-    return res.status(401).json({ success: false, message: "Unauthorized" });
-  }
-
-  // Attach userId to req so we can use it in our routes
-  req.userId = userId;
-  next();
-};
-
-/**
  * GET /api/users/me
  * PROTECTED: Requires a valid Clerk token.
+ * Purpose: Verifies that our backend can securely read the logged-in user.
  */
-router.get("/me", requireAuth, (req, res) => {
+router.get("/me", (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId)
+    return res.status(401).json({ success: false, message: "Unauthorized" });
+
   res.json({
     success: true,
     message: "Authenticated successfully on the backend!",
-    clerkUserId: req.userId,
+    clerkUserId: userId,
   });
 });
 
