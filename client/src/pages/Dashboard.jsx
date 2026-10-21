@@ -1,85 +1,116 @@
 /**
  * FILE: client/src/pages/Dashboard.jsx
- * PURPOSE: A protected page. Only visible if logged in.
- *          For now, it just shows the user's Clerk ID so we can
- *          verify everything works before adding DB roles.
+ * PURPOSE: Main screen for Patients. Shows their events and a form to create new ones.
  */
-import { useUser, UserButton } from "@clerk/clerk-react";
+import { useState, useEffect } from "react";
+import { useUser, useAuth, UserButton } from "@clerk/clerk-react";
 import { Link } from "react-router-dom";
-import { useState } from "react";
-import { useAuth } from "@clerk/clerk-react";
+import CreateEventForm from "../components/CreateEventForm";
 
 export default function Dashboard() {
   const { user } = useUser();
-
   const { getToken } = useAuth();
-  const [backendRes, setBackendRes] = useState(null);
 
-  const testBackend = async () => {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchMyEvents = async () => {
     try {
-      // 1. Get the JWT token from Clerk
       const token = await getToken();
-
-      // 2. Send it to the backend
-      const res = await fetch("http://localhost:5000/api/users/me", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const res = await fetch("http://localhost:5000/api/events/mine", {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
       const data = await res.json();
-      setBackendRes(data);
+      if (data.success) setEvents(data.events);
     } catch (err) {
-      setBackendRes({ error: err.message });
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
+  // Fetch events on load
+  useEffect(() => {
+    fetchMyEvents();
+  }, []);
+
+  // Called when CreateEventForm submits successfully
+  const handleEventCreated = (newEvent) => {
+    setEvents([newEvent, ...events]);
+  };
+
   return (
-    <div className="min-h-screen p-8 bg-gray-50">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
+    <div className="min-h-screen bg-gray-50 pb-12">
+      {/* Navbar */}
+      <nav className="bg-white shadow-sm p-4 flex justify-between items-center">
+        <h1 className="text-xl font-bold text-sky-700">MediHelp (Patient)</h1>
         <div className="flex items-center gap-4">
-          <Link to="/" className="text-sky-600 hover:underline">
-            Home
+          <Link
+            to="/select-role"
+            className="text-sm text-gray-500 hover:text-sky-600"
+          >
+            Switch Role
           </Link>
           <UserButton />
         </div>
-      </div>
+      </nav>
 
-      <div className="bg-white p-6 rounded-lg shadow-md max-w-lg">
-        <h2 className="text-xl font-semibold mb-2">Welcome!</h2>
-        <p className="text-gray-600 mb-4">
-          You are authenticated securely via Clerk.
-        </p>
-        <div className="bg-gray-100 p-4 rounded text-sm font-mono">
-          <p>
-            <strong>Email:</strong>{" "}
-            {user?.primaryEmailAddress?.emailAddress || "No email"}
+      <div className="max-w-4xl mx-auto p-4 mt-8">
+        <h2 className="text-2xl font-semibold mb-6">
+          Welcome, {user?.firstName || "Patient"}!
+        </h2>
+
+        {/* The Form */}
+        <CreateEventForm onEventCreated={handleEventCreated} />
+
+        {/* The List */}
+        <h3 className="text-xl font-bold mb-4">Your Requests</h3>
+        {loading ? (
+          <p>Loading events...</p>
+        ) : events.length === 0 ? (
+          <p className="text-gray-500 bg-white p-6 rounded-lg shadow-sm text-center">
+            No requests yet.
           </p>
-          <p>
-            <strong>Clerk ID:</strong> {user?.id}
-          </p>
-        </div>
+        ) : (
+          <div className="space-y-4">
+            {events.map((ev) => (
+              <div
+                key={ev._id}
+                className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex justify-between items-center"
+              >
+                <div>
+                  <h4 className="font-bold text-lg">{ev.hospitalName}</h4>
+                  <p className="text-sm text-gray-600">
+                    {new Date(ev.date).toLocaleString()} • {ev.durationHours}{" "}
+                    hrs
+                  </p>
+                  <div className="flex gap-2 mt-2">
+                    {ev.requirements.map((req) => (
+                      <span
+                        key={req}
+                        className="text-xs bg-sky-100 text-sky-800 px-2 py-1 rounded capitalize"
+                      >
+                        {req}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      ev.status === "open"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    {ev.status.toUpperCase()}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-      <button
-        onClick={testBackend}
-        className="mt-4 bg-blue-600 text-white px-4 py-2 rounded"
-      >
-        Test Backend Auth
-      </button>
-
-      {backendRes && (
-        <pre className="mt-4 bg-gray-800 text-green-400 p-4 rounded text-sm overflow-auto">
-          {JSON.stringify(backendRes, null, 2)}
-        </pre>
-      )}
-
-      <Link
-        to="/select-role"
-        className="mt-4 inline-block bg-gray-200 px-4 py-2 rounded"
-      >
-        Change Role
-      </Link>
     </div>
   );
 }

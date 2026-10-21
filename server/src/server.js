@@ -22,6 +22,7 @@ import { notFound, errorHandler } from "./middleware/errorHandler.js";
 import { clerkMiddleware } from "@clerk/express";
 import userRoutes from "./routes/user.routes.js";
 import webhookRoutes from "./routes/webhook.routes.js";
+import eventRoutes from "./routes/event.routes.js";
 
 // ---- 1. Load environment variables from .env -------------------------------
 dotenv.config();
@@ -81,6 +82,7 @@ app.use((req, _res, next) => {
 app.use("/api/health", healthRoutes);
 
 app.use("/api/users", userRoutes);
+app.use("/api/events", eventRoutes);
 
 // (Phase 1+) We'll mount /api/events, /api/users, etc. here later.
 
