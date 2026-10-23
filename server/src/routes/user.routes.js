@@ -13,16 +13,25 @@ const router = Router();
  * PROTECTED: Requires a valid Clerk token.
  * Purpose: Verifies that our backend can securely read the logged-in user.
  */
-router.get("/me", (req, res) => {
-  const { userId } = getAuth(req);
-  if (!userId)
-    return res.status(401).json({ success: false, message: "Unauthorized" });
+router.get("/me", async (req, res, next) => {
+  try {
+    const { userId: clerkId } = getAuth(req);
+    if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
 
-  res.json({
-    success: true,
-    message: "Authenticated successfully on the backend!",
-    clerkUserId: userId,
-  });
+    const user = await User.findOne({ clerkId });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    res.json({
+      success: true,
+      user: {
+        role: user.role,
+        firstName: user.firstName,
+        email: user.email,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
 /**
@@ -50,7 +59,7 @@ router.put("/role", async (req, res, next) => {
     const updatedUser = await User.findOneAndUpdate(
       { clerkId: userId },
       { role },
-      { new: true }
+      { new: true },
     );
 
     if (!updatedUser) {
