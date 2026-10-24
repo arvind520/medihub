@@ -27,6 +27,7 @@ router.get("/me", async (req, res, next) => {
         role: user.role,
         firstName: user.firstName,
         email: user.email,
+        phone: user.phone,
       },
     });
   } catch (err) {

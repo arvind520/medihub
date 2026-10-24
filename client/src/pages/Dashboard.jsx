@@ -6,6 +6,7 @@
 import { useState, useEffect } from "react";
 import { useUser, useAuth, UserButton } from "@clerk/clerk-react";
 import { Link } from "react-router-dom";
+import useSocket from "../hooks/useSocket"; // 👈 Import the hook
 import CreateEventForm from "../components/CreateEventForm";
 import HelperDashboard from "../components/HelperDashboard";
 
@@ -16,6 +17,7 @@ export default function Dashboard() {
   const [role, setRole] = useState(null);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const socket = useSocket(); // 👈 Initialize socket
 
   const initializeDashboard = async () => {
     try {
@@ -53,6 +55,26 @@ export default function Dashboard() {
   useEffect(() => {
     initializeDashboard();
   }, []);
+
+  // 👇 Add this useEffect to listen for socket events
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on("event:accepted", (data) => {
+      console.log("Realtime update received:", data);
+      alert("🔔 " + data.message);
+
+      // Update the event in the local state instantly
+      setEvents((prevEvents) =>
+        prevEvents.map((ev) => (ev._id === data.event._id ? data.event : ev)),
+      );
+    });
+
+    return () => {
+      socket.off("event:accepted");
+    };
+  }, [socket]);
+  // 👆
 
   const handleEventCreated = (newEvent) => {
     setEvents([newEvent, ...events]);
@@ -96,29 +118,41 @@ export default function Dashboard() {
             ) : (
               <div className="space-y-4">
                 {events.map((ev) => (
-                  <div
-                    key={ev._id}
-                    className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex justify-between items-center"
-                  >
-                    <div>
-                      <h4 className="font-bold text-lg">{ev.hospitalName}</h4>
-                      <p className="text-sm text-gray-600">
-                        {new Date(ev.date).toLocaleString()} •{" "}
-                        {ev.durationHours} hrs
-                      </p>
+                  <>
+                    <div
+                      key={ev._id}
+                      className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex justify-between items-center"
+                    >
+                      <div>
+                        <h4 className="font-bold text-lg">{ev.hospitalName}</h4>
+                        <p className="text-sm text-gray-600">
+                          {new Date(ev.date).toLocaleString()} •{" "}
+                          {ev.durationHours} hrs
+                        </p>
+                      </div>
+                      <div>
+                        <span
+                          className={`px-3 py-1 rounded-full text-sm font-medium ${
+                            ev.status === "open"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-blue-100 text-blue-800"
+                          }`}
+                        >
+                          {ev.status.toUpperCase()}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          ev.status === "open"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-blue-100 text-blue-800"
-                        }`}
-                      >
-                        {ev.status.toUpperCase()}
-                      </span>
-                    </div>
-                  </div>
+                    {ev.status === "accepted" && (
+                      <div className="mt-2 bg-blue-50 p-3 rounded text-sm text-blue-800">
+                        <strong>Helper Assigned!</strong>
+                        <br />
+                        {/* Note: We will fetch the helper's actual phone in a real scenario, 
+          but for now we'll just show a placeholder text */}
+                        The helper will contact you shortly. You can also check
+                        your app for updates.
+                      </div>
+                    )}
+                  </>
                 ))}
               </div>
             )}

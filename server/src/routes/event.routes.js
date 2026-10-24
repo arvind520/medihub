@@ -6,6 +6,7 @@ import { Router } from "express";
 import { getAuth } from "@clerk/express";
 import Event from "../models/Event.js";
 import User from "../models/User.js";
+import { getIO } from "../config/socket.js";
 
 const router = Router();
 
@@ -133,6 +134,19 @@ router.post("/:id/accept", async (req, res, next) => {
         error: "Event not found or already accepted by another helper.",
       });
     }
+
+    // 👇 ADD THIS SOCKET EMIT BLOCK 👇
+    try {
+      const io = getIO();
+      // Emit to the patient's room
+      io.to(updatedEvent.patientId).emit("event:accepted", {
+        message: "A helper has accepted your request!",
+        event: updatedEvent,
+      });
+    } catch (err) {
+      console.error("Socket emit failed:", err.message);
+    }
+    // 👆
 
     res.json({ success: true, event: updatedEvent });
   } catch (err) {

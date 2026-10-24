@@ -147,7 +147,7 @@ router.post(
             firstName: first_name || "",
             lastName: last_name || "",
           },
-          { upsert: true, new: true }
+          { upsert: true, new: true },
         );
         console.log(`✅ User synced: ${primaryEmail}`);
       } catch (dbErr) {
@@ -157,7 +157,7 @@ router.post(
     }
 
     res.status(200).json({ received: true });
-  }
+  },
 );
 
 export default router;

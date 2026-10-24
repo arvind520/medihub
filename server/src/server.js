@@ -23,6 +23,8 @@ import { clerkMiddleware } from "@clerk/express";
 import userRoutes from "./routes/user.routes.js";
 import webhookRoutes from "./routes/webhook.routes.js";
 import eventRoutes from "./routes/event.routes.js";
+import { createServer } from "http";
+import { initSocket } from "./config/socket.js";
 
 // ---- 1. Load environment variables from .env -------------------------------
 dotenv.config();
@@ -49,7 +51,7 @@ app.use(
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // 👈 Explicitly allow PUT
     allowedHeaders: ["Content-Type", "Authorization"], // 👈 Explicitly allow Auth header
-  })
+  }),
 );
 
 // express.json: parses JSON bodies into req.body
@@ -67,7 +69,7 @@ app.use(
     max: 300, // 300 requests per IP per window
     standardHeaders: true,
     legacyHeaders: false,
-  })
+  }),
 );
 
 // ---- 4. Routes -------------------------------------------------------------
@@ -95,7 +97,9 @@ const PORT = process.env.PORT || 5000;
 
 async function start() {
   await connectDB();
-  app.listen(PORT, () => {
+  const httpServer = createServer(app);
+  initSocket(httpServer);
+  httpServer.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
     console.log(`   Health check: http://localhost:${PORT}/api/health`);
   });
