@@ -34,8 +34,15 @@ const eventSchema = new mongoose.Schema(
     // Lifecycle of the event
     status: {
       type: String,
-      enum: ["open", "accepted", "ongoing", "completed", "cancelled"],
-      default: "open", // Starts as 'open' so helpers can find it
+      enum: [
+        "pending_payment",
+        "open",
+        "accepted",
+        "ongoing",
+        "completed",
+        "cancelled",
+      ],
+      default: "pending_payment", // Starts as 'open' so helpers can find it
     },
 
     // Who accepted it? (Filled in Phase 3)
@@ -43,8 +50,10 @@ const eventSchema = new mongoose.Schema(
 
     // Payment info (Filled in Phase 5)
     amount: { type: Number, default: 199 }, // MVP hardcoded price for now
+    razorpayOrderId: { type: String, default: null },
+    razorpayPaymentId: { type: String, default: null },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.model("Event", eventSchema);

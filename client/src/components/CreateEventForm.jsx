@@ -1,22 +1,22 @@
 /**
  * FILE: client/src/components/CreateEventForm.jsx
- * PURPOSE: A form for patients to request a helper.
+ * PURPOSE: Form to create an event AND pay via Razorpay.
  */
 import { useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
+import useRazorpay from "../hooks/useRazorpay"; // 👈 We'll create this next
 
 export default function CreateEventForm({ onEventCreated }) {
   const { getToken } = useAuth();
+  const { loadRazorpay } = useRazorpay();
   const [loading, setLoading] = useState(false);
 
-  // Form state
   const [hospitalName, setHospitalName] = useState("");
   const [date, setDate] = useState("");
   const [durationHours, setDurationHours] = useState(2);
   const [notes, setNotes] = useState("");
   const [requirements, setRequirements] = useState([]);
 
-  // Requirement options
   const options = [
     { id: "queue", label: "Standing in queue" },
     { id: "doctor", label: "Getting doctors" },
@@ -25,7 +25,6 @@ export default function CreateEventForm({ onEventCreated }) {
     { id: "paperwork", label: "Paperwork" },
   ];
 
-  // Handle checkbox changes
   const toggleRequirement = (id) => {
     if (requirements.includes(id)) {
       setRequirements(requirements.filter((r) => r !== id));
@@ -34,7 +33,6 @@ export default function CreateEventForm({ onEventCreated }) {
     }
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (requirements.length === 0)
@@ -43,7 +41,9 @@ export default function CreateEventForm({ onEventCreated }) {
     setLoading(true);
     try {
       const token = await getToken();
-      const res = await fetch("http://localhost:5000/api/events", {
+
+      // 1. Create the event in DB
+      const createRes = await fetch("http://localhost:5000/api/events", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -58,17 +58,79 @@ export default function CreateEventForm({ onEventCreated }) {
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to create event");
+      const createData = await createRes.json();
+      if (!createRes.ok) {
+        console.error("Backend Error:", createData);
+        throw new Error(createData.error || "Failed to create event");
+      }
 
-      // Reset form
-      setHospitalName("");
-      setDate("");
-      setRequirements([]);
-      setNotes("");
+      const event = createData.event;
 
-      // Notify parent component to refresh the list
-      onEventCreated(data.event);
+      // 2. Create Razorpay Order on backend
+      const orderRes = await fetch(
+        "http://localhost:5000/api/payments/create-order",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ eventId: event._id }),
+        },
+      );
+
+      const orderData = await orderRes.json();
+      if (!orderRes.ok) throw new Error(orderData.error);
+
+      // 3. Load Razorpay script and open checkout
+      const isLoaded = await loadRazorpay();
+      if (!isLoaded) throw new Error("Razorpay SDK failed to load");
+
+      const rzp = new window.Razorpay({
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "MediHelp",
+        description: "Hospital Assistance Booking",
+        order_id: orderData.orderId,
+
+        // This function runs when payment is successful
+        handler: async function (response) {
+          const freshToken = await getToken();
+          // 4. Verify payment on backend
+          const verifyRes = await fetch(
+            "http://localhost:5000/api/payments/verify",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${freshToken}`,
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                eventId: event._id,
+              }),
+            },
+          );
+
+          const verifyData = await verifyRes.json();
+          if (verifyRes.ok) {
+            alert("✅ Payment successful! Your request is now live.");
+            onEventCreated(verifyData.event); // Update UI
+            // Reset form
+            setHospitalName("");
+            setDate("");
+            setRequirements([]);
+            setNotes("");
+          } else {
+            alert("❌ Payment verification failed.");
+          }
+        },
+      });
+
+      rzp.open();
     } catch (err) {
       alert(err.message);
     } finally {
@@ -77,6 +139,7 @@ export default function CreateEventForm({ onEventCreated }) {
   };
 
   return (
+    // ... (Keep the JSX form exactly as it was, just change the button text to "Pay & Submit (₹199)")
     <form
       onSubmit={handleSubmit}
       className="bg-white p-6 rounded-lg shadow-md mb-8"
@@ -155,13 +218,12 @@ export default function CreateEventForm({ onEventCreated }) {
           placeholder="e.g. I need help with my elderly father"
         />
       </div>
-
       <button
         type="submit"
         disabled={loading}
         className="bg-sky-600 text-white px-6 py-2 rounded hover:bg-sky-700 disabled:opacity-50"
       >
-        {loading ? "Creating..." : "Submit Request (₹199)"}
+        {loading ? "Processing..." : "Pay & Submit (₹199)"}
       </button>
     </form>
   );

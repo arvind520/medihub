@@ -152,6 +152,17 @@ export default function Dashboard() {
                         your app for updates.
                       </div>
                     )}
+                    <span
+                      className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        ev.status === "open"
+                          ? "bg-green-100 text-green-800"
+                          : ev.status === "pending_payment"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-blue-100 text-blue-800"
+                      }`}
+                    >
+                      {ev.status.replace("_", " ").toUpperCase()}
+                    </span>
                   </>
                 ))}
               </div>

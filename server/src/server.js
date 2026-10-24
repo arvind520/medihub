@@ -10,11 +10,12 @@
  *   6. Connect DB
  *   7. Start listening
  */
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import dotenv from "dotenv";
+// import dotenv from "dotenv";
 
 import { connectDB } from "./config/db.js";
 import healthRoutes from "./routes/health.routes.js";
@@ -25,9 +26,10 @@ import webhookRoutes from "./routes/webhook.routes.js";
 import eventRoutes from "./routes/event.routes.js";
 import { createServer } from "http";
 import { initSocket } from "./config/socket.js";
+import paymentRoutes from "./routes/payment.routes.js";
 
 // ---- 1. Load environment variables from .env -------------------------------
-dotenv.config();
+// dotenv.config();
 
 // ---- 2. Create the Express application -------------------------------------
 const app = express();
@@ -85,6 +87,7 @@ app.use("/api/health", healthRoutes);
 
 app.use("/api/users", userRoutes);
 app.use("/api/events", eventRoutes);
+app.use("/api/payments", paymentRoutes);
 
 // (Phase 1+) We'll mount /api/events, /api/users, etc. here later.
 
