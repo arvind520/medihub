@@ -4,6 +4,7 @@
  */
 import { useState, useEffect } from "react";
 import { useAuth } from "@clerk/clerk-react";
+import HelperActiveJobs from "./HelperActiveJobs";
 
 export default function HelperDashboard() {
   const { getToken } = useAuth();
@@ -66,6 +67,7 @@ export default function HelperDashboard() {
 
   return (
     <div>
+      <HelperActiveJobs />
       <h3 className="text-xl font-bold mb-4">Available Jobs</h3>
       {events.length === 0 ? (
         <p className="text-gray-500 bg-white p-6 rounded-lg shadow-sm text-center">

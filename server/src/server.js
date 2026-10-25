@@ -50,9 +50,9 @@ app.use(clerkMiddleware());
 app.use(
   cors({
     origin: process.env.CLIENT_URL || "http://localhost:5173",
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // 👈 Explicitly allow PUT
-    allowedHeaders: ["Content-Type", "Authorization"], // 👈 Explicitly allow Auth header
+    credentials: true, // allow cookies/auth headers
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], // 👈 ADD THIS
+    allowedHeaders: ["Content-Type", "Authorization"], // 👈 AND THIS
   }),
 );
 

@@ -70,8 +70,17 @@ export default function Dashboard() {
       );
     });
 
+    // 👇 LISTENER 👇
+    socket.on("event:completed", (data) => {
+      alert("✅ " + data.message);
+      setEvents((prevEvents) =>
+        prevEvents.map((ev) => (ev._id === data.event._id ? data.event : ev)),
+      );
+    });
+
     return () => {
       socket.off("event:accepted");
+      socket.off("event:completed"); // Cleanup
     };
   }, [socket]);
   // 👆
@@ -158,7 +167,9 @@ export default function Dashboard() {
                           ? "bg-green-100 text-green-800"
                           : ev.status === "pending_payment"
                             ? "bg-yellow-100 text-yellow-800"
-                            : "bg-blue-100 text-blue-800"
+                            : ev.status === "completed"
+                              ? "bg-gray-200 text-gray-700"
+                              : "bg-blue-100 text-blue-800"
                       }`}
                     >
                       {ev.status.replace("_", " ").toUpperCase()}

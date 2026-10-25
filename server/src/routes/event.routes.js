@@ -153,5 +153,73 @@ router.post("/:id/accept", async (req, res, next) => {
     next(err);
   }
 });
+/**
+ * PATCH /api/events/:id/complete
+ * PROTECTED: Marks an accepted event as completed. Only the assigned helper can do this.
+ */
+router.patch("/:id/complete", async (req, res, next) => {
+  try {
+    // 👇 FIX: Use getAuth(req) instead of req.auth.userId
+    const { userId: clerkId } = getAuth(req);
+    if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+
+    // 1. Find the event
+    const event = await Event.findById(req.params.id);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+
+    // 2. Ensure the person trying to complete it is the assigned helper
+    if (event.helperId !== clerkId) {
+      return res
+        .status(403)
+        .json({ error: "You are not assigned to this event" });
+    }
+
+    // 3. Ensure the event is actually in 'accepted' status
+    if (event.status !== "accepted") {
+      return res
+        .status(400)
+        .json({ error: "Event cannot be completed from its current status" });
+    }
+
+    // 4. Mark it completed
+    event.status = "completed";
+    await event.save();
+
+    // 5. Emit real-time update to the patient
+    try {
+      const io = getIO();
+      io.to(event.patientId).emit("event:completed", {
+        message: "Your helper has marked the job as completed!",
+        event,
+      });
+    } catch (err) {
+      console.error("Socket emit failed:", err.message);
+    }
+
+    res.json({ success: true, event });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * GET /api/events/helper/active
+ * PROTECTED: Fetches events assigned to the logged-in helper that are not completed.
+ */
+router.get("/helper/active", async (req, res, next) => {
+  try {
+    const { userId: clerkId } = getAuth(req);
+    if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+
+    const events = await Event.find({
+      helperId: clerkId,
+      status: { $in: ["accepted", "ongoing"] },
+    }).sort({ date: 1 });
+
+    res.json({ success: true, events });
+  } catch (err) {
+    next(err);
+  }
+});
 
 export default router;
