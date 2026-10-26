@@ -47,6 +47,7 @@ const eventSchema = new mongoose.Schema(
 
     // Who accepted it? (Filled in Phase 3)
     helperId: { type: String, default: null },
+    helperPhone: { type: String, default: null },
 
     // Payment info (Filled in Phase 5)
     amount: { type: Number, default: 199 }, // MVP hardcoded price for now

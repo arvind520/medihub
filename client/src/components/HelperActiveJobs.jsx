@@ -91,6 +91,9 @@ export default function HelperActiveJobs() {
                     </span>
                   ))}
                 </div>
+                <div className="text-sm text-gray-800 bg-gray-50 p-2 rounded border mb-3">
+                  <strong>Patient Contact:</strong> {job.patientPhone || "N/A"}
+                </div>
               </div>
               <button
                 onClick={() => handleComplete(job._id)}

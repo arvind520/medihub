@@ -152,13 +152,20 @@ export default function Dashboard() {
                       </div>
                     </div>
                     {ev.status === "accepted" && (
-                      <div className="mt-2 bg-blue-50 p-3 rounded text-sm text-blue-800">
-                        <strong>Helper Assigned!</strong>
-                        <br />
-                        {/* Note: We will fetch the helper's actual phone in a real scenario, 
-          but for now we'll just show a placeholder text */}
-                        The helper will contact you shortly. You can also check
-                        your app for updates.
+                      <div className="mt-2 bg-blue-50 p-3 rounded text-sm text-blue-800 flex justify-between items-center">
+                        <div>
+                          <strong>Helper Assigned!</strong>
+                          <br />
+                          Phone: {ev.helperPhone || "Loading..."}
+                        </div>
+                        {ev.helperPhone && (
+                          <a
+                            href={`tel:${ev.helperPhone}`}
+                            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                          >
+                            Call Helper
+                          </a>
+                        )}
                       </div>
                     )}
                     <span

@@ -33,7 +33,7 @@ const userSchema = new mongoose.Schema(
 
     // Optional fields for helpers (Phase 3+)
     // phone: { type: String },
-    phone: { type: String, default: "+91 9999999999" }, // Dummy for now
+    phone: { type: String, default: "+91 9876543210" }, // Dummy for now
     isApproved: { type: Boolean, default: false }, // Admin approves helpers
     avgRating: { type: Number, default: 0 },
   },

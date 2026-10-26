@@ -125,6 +125,7 @@ router.post("/:id/accept", async (req, res, next) => {
       {
         status: "accepted",
         helperId: clerkId,
+        helperPhone: user.phone,
       },
       { new: true }, // Return the updated document
     );
@@ -204,7 +205,7 @@ router.patch("/:id/complete", async (req, res, next) => {
 
 /**
  * GET /api/events/helper/active
- * PROTECTED: Fetches events assigned to the logged-in helper that are not completed.
+ * PROTECTED: Fetches events assigned to the logged-in helper.
  */
 router.get("/helper/active", async (req, res, next) => {
   try {
@@ -216,7 +217,23 @@ router.get("/helper/active", async (req, res, next) => {
       status: { $in: ["accepted", "ongoing"] },
     }).sort({ date: 1 });
 
-    res.json({ success: true, events });
+    // Fetch the patient details for these events securely
+    const eventsWithPatientInfo = await Promise.all(
+      events.map(async (ev) => {
+        // We find the patient user based on the event's patientId (which is their clerkId)
+        const patient = await User.findOne({ clerkId: ev.patientId });
+
+        // Convert the Mongoose document to a plain object so we can add a field
+        const evObj = ev.toObject();
+
+        // Attach the patient's phone (or fallback if not found)
+        evObj.patientPhone = patient?.phone || "Phone not provided";
+
+        return evObj;
+      }),
+    );
+
+    res.json({ success: true, events: eventsWithPatientInfo });
   } catch (err) {
     next(err);
   }
