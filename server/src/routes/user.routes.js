@@ -30,6 +30,8 @@ router.get("/me", async (req, res, next) => {
         phone: user.phone,
         avgRating: user.avgRating,
         totalReviews: user.totalReviews,
+        isApproved: user.isApproved, // 👈 Add
+        kycStatus: user.kycStatus, // 👈 Add
       },
     });
   } catch (err) {
@@ -74,6 +76,33 @@ router.put("/role", async (req, res, next) => {
     res.json({ success: true, user: updatedUser });
   } catch (err) {
     next(err); // Pass to our global error handler
+  }
+});
+
+/**
+ * POST /api/users/kyc
+ * PROTECTED: Helper submits their KYC document.
+ */
+router.post("/kyc", async (req, res, next) => {
+  try {
+    const { userId: clerkId } = getAuth(req);
+    const { kycDocument } = req.body;
+
+    if (!kycDocument)
+      return res.status(400).json({ error: "Document required" });
+
+    const user = await User.findOneAndUpdate(
+      { clerkId },
+      {
+        kycDocument,
+        kycStatus: "pending",
+      },
+      { new: true },
+    );
+
+    res.json({ success: true, user });
+  } catch (err) {
+    next(err);
   }
 });
 

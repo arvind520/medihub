@@ -10,6 +10,8 @@ import useSocket from "../hooks/useSocket";
 import CreateEventForm from "../components/CreateEventForm";
 import HelperDashboard from "../components/HelperDashboard";
 import ReviewModal from "../components/ReviewModal";
+import HelperKYC from "../components/HelperKYC";
+import AdminDashboard from "../components/AdminDashboard";
 
 export default function Dashboard() {
   const { user } = useUser();
@@ -230,8 +232,16 @@ export default function Dashboard() {
               </div>
             )}
           </>
+        ) : role === "admin" ? (
+          <AdminDashboard />
         ) : (
-          <HelperDashboard />
+          <>
+            {!userData?.isApproved ? (
+              <HelperKYC userData={userData} onRefresh={initializeDashboard} />
+            ) : (
+              <HelperDashboard />
+            )}
+          </>
         )}
       </div>
 

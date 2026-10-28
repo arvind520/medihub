@@ -38,6 +38,13 @@ const userSchema = new mongoose.Schema(
     avgRating: { type: Number, default: 0 },
     totalReviews: { type: Number, default: 0 },
     penaltyBalance: { type: Number, default: 0 },
+    isApproved: { type: Boolean, default: false }, // Admin must approve helpers
+    kycDocument: { type: String, default: null }, // URL or text of ID (e.g., Aadhaar)
+    kycStatus: {
+      type: String,
+      enum: ["not_submitted", "pending", "approved", "rejected"],
+      default: "not_submitted",
+    },
   },
   { timestamps: true }, // Automatically adds createdAt and updatedAt
 );

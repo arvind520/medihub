@@ -99,6 +99,12 @@ router.get("/open", async (req, res, next) => {
     if (!user || user.role !== "helper") {
       return res.status(403).json({ error: "Only helpers can view this feed" });
     }
+    // 👇 ADD THIS CHECK 👇
+    if (!user.isApproved) {
+      return res
+        .status(403)
+        .json({ error: "Your account is pending admin approval." });
+    }
 
     // 2. Find all open events, sorted by date (soonest first)
     const events = await Event.find({ status: "open" }).sort({ date: 1 });
@@ -122,6 +128,13 @@ router.post("/:id/accept", async (req, res, next) => {
     const user = await User.findOne({ clerkId });
     if (!user || user.role !== "helper") {
       return res.status(403).json({ error: "Only helpers can accept events" });
+    }
+
+    // 👇 ADD THIS CHECK 👇
+    if (!user.isApproved) {
+      return res
+        .status(403)
+        .json({ error: "Your account is pending admin approval." });
     }
 
     // 2. Find the event and update it atomically.
