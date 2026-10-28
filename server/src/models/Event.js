@@ -53,6 +53,11 @@ const eventSchema = new mongoose.Schema(
     amount: { type: Number, default: 199 }, // MVP hardcoded price for now
     razorpayOrderId: { type: String, default: null },
     razorpayPaymentId: { type: String, default: null },
+    refundStatus: {
+      type: String,
+      enum: ["none", "processed", "failed"],
+      default: "none",
+    },
   },
   { timestamps: true },
 );

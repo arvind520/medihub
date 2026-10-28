@@ -6,7 +6,7 @@
 import { useState, useEffect } from "react";
 import { useUser, useAuth, UserButton } from "@clerk/clerk-react";
 import { Link } from "react-router-dom";
-import useSocket from "../hooks/useSocket"; // 👈 Import the hook
+import useSocket from "../hooks/useSocket";
 import CreateEventForm from "../components/CreateEventForm";
 import HelperDashboard from "../components/HelperDashboard";
 import ReviewModal from "../components/ReviewModal";
@@ -16,33 +16,24 @@ export default function Dashboard() {
   const { getToken } = useAuth();
 
   const [role, setRole] = useState(null);
-  const [userData, setUserData] = useState(null); // Full DB user (role, avgRating, ...)
+  const [userData, setUserData] = useState(null);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [reviewEvent, setReviewEvent] = useState(null);
-  const [reviewedEvents, setReviewedEvents] = useState([]); // Keep track of what's already reviewed
-  const socket = useSocket(); // 👈 Initialize socket
+  const [reviewedEvents, setReviewedEvents] = useState([]);
+  const socket = useSocket();
 
   const initializeDashboard = async () => {
     try {
       const token = await getToken();
-
-      // 1. Fetch user data to get the role
       const userRes = await fetch("http://localhost:5000/api/users/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await userRes.json();
 
-      // If /me route isn't updated to return the DB user, we might need a workaround.
-      // Let's assume we updated /me or we fetch it here.
-      // (Note: If your /me route just returns `clerkUserId`, we need to update it below).
-
-      // For now, let's assume role is 'patient' for testing if we can't fetch it.
-      // In Step 4, we will update the backend /me route to return the full DB user!
       setUserData(data.user || null);
       setRole(data.user?.role || "patient");
 
-      // 2. If patient, fetch their events
       if (data.user?.role === "patient") {
         const evRes = await fetch("http://localhost:5000/api/events/mine", {
           headers: { Authorization: `Bearer ${token}` },
@@ -61,21 +52,16 @@ export default function Dashboard() {
     initializeDashboard();
   }, []);
 
-  // 👇 Add this useEffect to listen for socket events
   useEffect(() => {
     if (!socket) return;
 
     socket.on("event:accepted", (data) => {
-      console.log("Realtime update received:", data);
       alert("🔔 " + data.message);
-
-      // Update the event in the local state instantly
       setEvents((prevEvents) =>
         prevEvents.map((ev) => (ev._id === data.event._id ? data.event : ev)),
       );
     });
 
-    // 👇 LISTENER 👇
     socket.on("event:completed", (data) => {
       alert("✅ " + data.message);
       setEvents((prevEvents) =>
@@ -83,12 +69,18 @@ export default function Dashboard() {
       );
     });
 
+    socket.on("event:cancelled", (data) => {
+      alert("⚠️ " + data.message);
+      // If the helper is currently looking at their active jobs, refresh the feed
+      window.location.reload();
+    });
+
     return () => {
       socket.off("event:accepted");
-      socket.off("event:completed"); // Cleanup
+      socket.off("event:completed");
+      socket.off("event:cancelled");
     };
   }, [socket]);
-  // 👆
 
   const handleEventCreated = (newEvent) => {
     setEvents([newEvent, ...events]);
@@ -125,7 +117,6 @@ export default function Dashboard() {
           Welcome, {user?.firstName || "User"}!
         </h2>
 
-        {/* Conditionally render based on role */}
         {role === "patient" ? (
           <>
             <CreateEventForm onEventCreated={handleEventCreated} />
@@ -137,11 +128,12 @@ export default function Dashboard() {
             ) : (
               <div className="space-y-4">
                 {events.map((ev) => (
-                  <>
-                    <div
-                      key={ev._id}
-                      className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex justify-between items-center"
-                    >
+                  <div
+                    key={ev._id}
+                    className="bg-white p-4 rounded-lg shadow-sm border border-gray-100"
+                  >
+                    {/* Top Row: Title and Status */}
+                    <div className="flex justify-between items-start mb-2">
                       <div>
                         <h4 className="font-bold text-lg">{ev.hospitalName}</h4>
                         <p className="text-sm text-gray-600">
@@ -149,18 +141,22 @@ export default function Dashboard() {
                           {ev.durationHours} hrs
                         </p>
                       </div>
-                      <div>
-                        <span
-                          className={`px-3 py-1 rounded-full text-sm font-medium ${
-                            ev.status === "open"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-blue-100 text-blue-800"
-                          }`}
-                        >
-                          {ev.status.toUpperCase()}
-                        </span>
-                      </div>
+                      <span
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          ev.status === "open"
+                            ? "bg-green-100 text-green-800"
+                            : ev.status === "pending_payment"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : ev.status === "completed"
+                                ? "bg-gray-200 text-gray-700"
+                                : "bg-blue-100 text-blue-800"
+                        }`}
+                      >
+                        {ev.status.replace("_", " ").toUpperCase()}
+                      </span>
                     </div>
+
+                    {/* Helper Assigned Block */}
                     {ev.status === "accepted" && (
                       <div className="mt-2 bg-blue-50 p-3 rounded text-sm text-blue-800 flex justify-between items-center">
                         <div>
@@ -168,6 +164,42 @@ export default function Dashboard() {
                           <br />
                           Phone: {ev.helperPhone || "Loading..."}
                         </div>
+                        <button
+                          onClick={async () => {
+                            if (
+                              !window.confirm(
+                                "Are you sure? This will refund your money and penalize the helper.",
+                              )
+                            )
+                              return;
+                            try {
+                              const token = await getToken();
+                              const res = await fetch(
+                                `http://localhost:5000/api/events/${ev._id}/cancel`,
+                                {
+                                  method: "POST",
+                                  headers: { Authorization: `Bearer ${token}` },
+                                },
+                              );
+                              const data = await res.json();
+                              if (res.ok) {
+                                alert("✅ Refund initiated successfully.");
+                                setEvents(
+                                  events.map((e) =>
+                                    e._id === ev._id ? data.event : e,
+                                  ),
+                                );
+                              } else {
+                                alert(data.error);
+                              }
+                            } catch (err) {
+                              alert("Network error: ", err);
+                            }
+                          }}
+                          className="border border-red-500 text-red-600 px-4 py-2 rounded hover:bg-red-50"
+                        >
+                          Cancel & Refund
+                        </button>
                         {ev.helperPhone && (
                           <a
                             href={`tel:${ev.helperPhone}`}
@@ -178,24 +210,11 @@ export default function Dashboard() {
                         )}
                       </div>
                     )}
-                    <span
-                      className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        ev.status === "open"
-                          ? "bg-green-100 text-green-800"
-                          : ev.status === "pending_payment"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : ev.status === "completed"
-                              ? "bg-gray-200 text-gray-700"
-                              : "bg-blue-100 text-blue-800"
-                      }`}
-                    >
-                      {ev.status.replace("_", " ").toUpperCase()}
-                    </span>
+
+                    {/* Completed Block */}
                     {ev.status === "completed" && (
                       <div className="mt-2 bg-gray-50 p-3 rounded text-sm text-gray-700 flex justify-between items-center">
                         <span>Job Completed</span>
-
-                        {/* Only show button if NOT already reviewed */}
                         {!reviewedEvents.includes(ev._id) && (
                           <button
                             onClick={() => setReviewEvent(ev)}
@@ -206,7 +225,7 @@ export default function Dashboard() {
                         )}
                       </div>
                     )}
-                  </>
+                  </div>
                 ))}
               </div>
             )}
@@ -215,6 +234,7 @@ export default function Dashboard() {
           <HelperDashboard />
         )}
       </div>
+
       {reviewEvent && (
         <ReviewModal
           event={reviewEvent}

@@ -37,6 +37,7 @@ const userSchema = new mongoose.Schema(
     isApproved: { type: Boolean, default: false }, // Admin approves helpers
     avgRating: { type: Number, default: 0 },
     totalReviews: { type: Number, default: 0 },
+    penaltyBalance: { type: Number, default: 0 },
   },
   { timestamps: true }, // Automatically adds createdAt and updatedAt
 );

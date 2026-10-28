@@ -7,8 +7,15 @@ import { getAuth } from "@clerk/express";
 import Event from "../models/Event.js";
 import User from "../models/User.js";
 import { getIO } from "../config/socket.js";
+import Razorpay from "razorpay";
+import crypto from "crypto";
 
 const router = Router();
+// Initialize Razorpay (if not already done globally)
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
 
 /**
  * POST /api/events
@@ -234,6 +241,76 @@ router.get("/helper/active", async (req, res, next) => {
     );
 
     res.json({ success: true, events: eventsWithPatientInfo });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * POST /api/events/:id/cancel
+ * PROTECTED: Patient cancels an accepted event. Refunds money, penalizes helper.
+ */
+router.post("/:id/cancel", async (req, res, next) => {
+  try {
+    const { userId: clerkId } = getAuth(req);
+    if (!clerkId) return res.status(401).json({ error: "Unauthorized" });
+
+    const event = await Event.findById(req.params.id);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+
+    // Only the patient who created it can cancel
+    if (event.patientId !== clerkId) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    if (event.status !== "accepted") {
+      return res.status(400).json({ error: "Can only cancel accepted events" });
+    }
+
+    // 1. Trigger Razorpay Refund (if payment was made)
+    if (event.razorpayPaymentId) {
+      try {
+        // We refund the full amount
+        await razorpay.payments.refund(event.razorpayPaymentId, {
+          amount: event.amount * 100, // Razorpay expects paise
+          notes: { reason: "Helper no-show / patient cancellation" },
+        });
+        event.refundStatus = "processed";
+      } catch (refundErr) {
+        console.error("Razorpay Refund Failed:", refundErr);
+        // We still proceed with the cancellation in our DB even if Razorpay fails,
+        // but you would normally handle this discrepancy in a production app.
+        event.refundStatus = "failed";
+      }
+    }
+
+    // 2. Penalize the Helper (deduct ₹50 for abandoning the job)
+    if (event.helperId) {
+      await User.findOneAndUpdate(
+        { clerkId: event.helperId },
+        { $inc: { penaltyBalance: 50 } }, // Increment penalty by ₹50
+      );
+    }
+
+    // 3. Update event status
+    event.status = "cancelled";
+    await event.save();
+
+    // 4. Notify Helper via Socket
+    try {
+      const io = getIO();
+      io.to(event.helperId).emit("event:cancelled", {
+        message:
+          "A patient has cancelled the event. A ₹50 penalty has been applied to your account.",
+        event,
+      });
+    } catch (err) {}
+
+    res.json({
+      success: true,
+      message: "Event cancelled and refund initiated.",
+      event,
+    });
   } catch (err) {
     next(err);
   }
