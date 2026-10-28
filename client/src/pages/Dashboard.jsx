@@ -9,14 +9,18 @@ import { Link } from "react-router-dom";
 import useSocket from "../hooks/useSocket"; // 👈 Import the hook
 import CreateEventForm from "../components/CreateEventForm";
 import HelperDashboard from "../components/HelperDashboard";
+import ReviewModal from "../components/ReviewModal";
 
 export default function Dashboard() {
   const { user } = useUser();
   const { getToken } = useAuth();
 
   const [role, setRole] = useState(null);
+  const [userData, setUserData] = useState(null); // Full DB user (role, avgRating, ...)
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [reviewEvent, setReviewEvent] = useState(null);
+  const [reviewedEvents, setReviewedEvents] = useState([]); // Keep track of what's already reviewed
   const socket = useSocket(); // 👈 Initialize socket
 
   const initializeDashboard = async () => {
@@ -27,7 +31,7 @@ export default function Dashboard() {
       const userRes = await fetch("http://localhost:5000/api/users/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const userData = await userRes.json();
+      const data = await userRes.json();
 
       // If /me route isn't updated to return the DB user, we might need a workaround.
       // Let's assume we updated /me or we fetch it here.
@@ -35,10 +39,11 @@ export default function Dashboard() {
 
       // For now, let's assume role is 'patient' for testing if we can't fetch it.
       // In Step 4, we will update the backend /me route to return the full DB user!
-      setRole(userData.user?.role || "patient");
+      setUserData(data.user || null);
+      setRole(data.user?.role || "patient");
 
       // 2. If patient, fetch their events
-      if (userData.user?.role === "patient") {
+      if (data.user?.role === "patient") {
         const evRes = await fetch("http://localhost:5000/api/events/mine", {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -96,8 +101,13 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-50 pb-12">
       {/* Navbar */}
       <nav className="bg-white shadow-sm p-4 flex justify-between items-center">
-        <h1 className="text-xl font-bold text-sky-700">
+        <h1 className="text-xl font-bold text-sky-700 flex items-center gap-2">
           MediHelp ({role === "patient" ? "Patient" : "Helper"})
+          {role === "helper" && (
+            <span className="text-sm font-normal text-yellow-600 bg-yellow-50 px-2 py-1 rounded">
+              ★ {userData?.avgRating || "New"}
+            </span>
+          )}
         </h1>
         <div className="flex items-center gap-4">
           <Link
@@ -181,6 +191,21 @@ export default function Dashboard() {
                     >
                       {ev.status.replace("_", " ").toUpperCase()}
                     </span>
+                    {ev.status === "completed" && (
+                      <div className="mt-2 bg-gray-50 p-3 rounded text-sm text-gray-700 flex justify-between items-center">
+                        <span>Job Completed</span>
+
+                        {/* Only show button if NOT already reviewed */}
+                        {!reviewedEvents.includes(ev._id) && (
+                          <button
+                            onClick={() => setReviewEvent(ev)}
+                            className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 text-sm"
+                          >
+                            ★ Leave Review
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </>
                 ))}
               </div>
@@ -190,6 +215,13 @@ export default function Dashboard() {
           <HelperDashboard />
         )}
       </div>
+      {reviewEvent && (
+        <ReviewModal
+          event={reviewEvent}
+          onClose={() => setReviewEvent(null)}
+          onReviewSubmitted={(id) => setReviewedEvents([...reviewedEvents, id])}
+        />
+      )}
     </div>
   );
 }

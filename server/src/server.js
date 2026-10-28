@@ -27,6 +27,7 @@ import eventRoutes from "./routes/event.routes.js";
 import { createServer } from "http";
 import { initSocket } from "./config/socket.js";
 import paymentRoutes from "./routes/payment.routes.js";
+import reviewRoutes from "./routes/review.routes.js";
 
 // ---- 1. Load environment variables from .env -------------------------------
 // dotenv.config();
@@ -88,6 +89,7 @@ app.use("/api/health", healthRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/reviews", reviewRoutes);
 
 // (Phase 1+) We'll mount /api/events, /api/users, etc. here later.
 

@@ -36,6 +36,7 @@ const userSchema = new mongoose.Schema(
     phone: { type: String, default: "+91 9876543210" }, // Dummy for now
     isApproved: { type: Boolean, default: false }, // Admin approves helpers
     avgRating: { type: Number, default: 0 },
+    totalReviews: { type: Number, default: 0 },
   },
   { timestamps: true }, // Automatically adds createdAt and updatedAt
 );

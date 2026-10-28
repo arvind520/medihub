@@ -28,6 +28,8 @@ router.get("/me", async (req, res, next) => {
         firstName: user.firstName,
         email: user.email,
         phone: user.phone,
+        avgRating: user.avgRating,
+        totalReviews: user.totalReviews,
       },
     });
   } catch (err) {
