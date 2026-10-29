@@ -4,7 +4,7 @@
  */
 import { useState } from "react";
 import { useAuth, useUser } from "@clerk/clerk-react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function RoleSelect() {
   const { getToken } = useAuth();
@@ -39,30 +39,66 @@ export default function RoleSelect() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full text-center">
-        <h1 className="text-2xl font-bold mb-2">Welcome, {user?.firstName}!</h1>
-        <p className="text-gray-500 mb-8">How do you want to use MediHelp?</p>
+    <div className="role-page">
+      <div className="role-card">
+        <Link className="brand-lockup" to="/" aria-label="MediHelp home">
+          <span className="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none">
+              <path
+                d="M16 26s-9-5.7-9-12.1A5 5 0 0 1 16 10a5 5 0 0 1 9 3.9C25 20.3 16 26 16 26Z"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M16 12v8m-4-4h8"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+          </span>
+          <span>MediHelp</span>
+        </Link>
+        <h1>Welcome, {user?.firstName || "there"}.</h1>
+        <p>How would you like to use MediHelp?</p>
 
-        <div className="flex flex-col gap-4">
+        <div className="role-options">
           <button
             onClick={() => handleSelect("patient")}
             disabled={loading}
-            className="border-2 border-sky-500 text-sky-700 p-4 rounded-lg hover:bg-sky-50 transition"
+            className="role-option"
           >
-            <h2 className="font-bold text-lg">I need help</h2>
-            <p className="text-sm">I am a Patient</p>
+            <span className="role-option-title">
+              {loading ? "Saving your choice..." : "I need support"}
+            </span>
+            <span className="role-option-description">
+              I’m arranging help for a hospital visit
+            </span>
+            <span className="role-option-icon" aria-hidden="true">
+              +
+            </span>
           </button>
 
           <button
             onClick={() => handleSelect("helper")}
             disabled={loading}
-            className="border-2 border-green-500 text-green-700 p-4 rounded-lg hover:bg-green-50 transition"
+            className="role-option"
           >
-            <h2 className="font-bold text-lg">I want to earn</h2>
-            <p className="text-sm">I am a Helper / Assistant</p>
+            <span className="role-option-title">
+              {loading ? "Saving your choice..." : "I want to be a companion"}
+            </span>
+            <span className="role-option-description">
+              I’d like to support people in my community
+            </span>
+            <span className="role-option-icon" aria-hidden="true">
+              ♥
+            </span>
           </button>
         </div>
+        <Link className="role-back-link" to="/">
+          Back to MediHelp
+        </Link>
       </div>
     </div>
   );

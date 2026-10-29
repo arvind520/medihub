@@ -37,11 +37,12 @@ export default function HelperKYC({ userData, onRefresh }) {
   // If submitted and pending, show waiting screen
   if (userData.kycStatus === "pending") {
     return (
-      <div className="bg-yellow-50 p-6 rounded-lg text-center shadow-sm">
-        <h3 className="text-xl font-bold text-yellow-700 mb-2">
+      <div className="workspace-card verification-pending text-center">
+        <span className="verification-icon" aria-hidden="true">✓</span>
+        <h3 className="form-title">
           Verification Pending
         </h3>
-        <p className="text-yellow-600">
+        <p className="form-description">
           Your KYC is under review by an Admin. You cannot accept jobs yet.
         </p>
       </div>
@@ -50,24 +51,25 @@ export default function HelperKYC({ userData, onRefresh }) {
 
   // If not submitted, show form
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md max-w-md mx-auto mt-10">
-      <h2 className="text-xl font-bold mb-4">Complete your KYC</h2>
-      <p className="text-sm text-gray-600 mb-4">
+    <div className="workspace-card kyc-card">
+      <span className="section-kicker">One quick step</span>
+      <h2 className="form-title mt-2">Complete your verification</h2>
+      <p className="form-description">
         To start earning, please provide your Aadhaar or ID number.
       </p>
-      <form onSubmit={submitKYC}>
+      <form className="kyc-form" onSubmit={submitKYC}>
         <input
           type="text"
           required
           value={document}
           onChange={(e) => setDocument(e.target.value)}
           placeholder="Enter Aadhaar / ID Number"
-          className="w-full border rounded p-2 mb-4"
+          className="form-control mb-4"
         />
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-sky-600 text-white px-4 py-2 rounded hover:bg-sky-700 disabled:opacity-50"
+          className="app-primary-button w-full"
         >
           {loading ? "Submitting..." : "Submit for Review"}
         </button>

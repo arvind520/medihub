@@ -89,24 +89,48 @@ export default function Dashboard() {
   };
 
   if (loading)
-    return <div className="p-10 text-center">Loading dashboard...</div>;
+    return (
+      <div className="loading-screen" role="status">
+        <span className="brand-mark" aria-hidden="true">+</span>
+        <p>Getting your care space ready</p>
+      </div>
+    );
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-12">
+    <div className="workspace-shell">
       {/* Navbar */}
-      <nav className="bg-white shadow-sm p-4 flex justify-between items-center">
-        <h1 className="text-xl font-bold text-sky-700 flex items-center gap-2">
-          MediHelp ({role === "patient" ? "Patient" : "Helper"})
+      <nav className="workspace-nav">
+        <Link to="/" className="brand-lockup workspace-brand" aria-label="MediHelp home">
+          <span className="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none">
+              <path
+                d="M16 26s-9-5.7-9-12.1A5 5 0 0 1 16 10a5 5 0 0 1 9 3.9C25 20.3 16 26 16 26Z"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M16 12v8m-4-4h8"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+          </span>
+          <span>MediHelp</span>
+          <span className="workspace-role-label">
+            {role === "patient" ? "Patient" : role === "admin" ? "Admin" : "Helper"}
+          </span>
           {role === "helper" && (
-            <span className="text-sm font-normal text-yellow-600 bg-yellow-50 px-2 py-1 rounded">
+            <span className="rating-badge">
               ★ {userData?.avgRating || "New"}
             </span>
           )}
-        </h1>
-        <div className="flex items-center gap-4">
+        </Link>
+        <div className="workspace-nav-actions">
           <Link
             to="/select-role"
-            className="text-sm text-gray-500 hover:text-sky-600"
+            className="switch-role"
           >
             Switch Role
           </Link>
@@ -114,44 +138,55 @@ export default function Dashboard() {
         </div>
       </nav>
 
-      <div className="max-w-5xl mx-auto p-4 mt-8">
-        <h2 className="text-2xl font-semibold mb-6">
-          Welcome, {user?.firstName || "User"}!
-        </h2>
+      <main className="workspace-main">
+        <div className="workspace-welcome">
+          <span className="section-kicker">Your MediHelp space</span>
+          <h2>Welcome, {user?.firstName || "there"}.</h2>
+          <p>
+            {role === "patient"
+              ? "Arrange a little extra support for your next hospital visit."
+              : role === "helper"
+                ? "Your care and time can make someone’s day easier."
+                : "Review and support the MediHelp community."}
+          </p>
+        </div>
 
         {role === "patient" ? (
           <>
             <CreateEventForm onEventCreated={handleEventCreated} />
-            <h3 className="text-xl font-bold mb-4">Your Requests</h3>
+            <div className="workspace-section-heading">
+              <h3>Your requests</h3>
+              <p>Keep track of the support you’ve arranged.</p>
+            </div>
             {events.length === 0 ? (
-              <p className="text-gray-500 bg-white p-6 rounded-lg shadow-sm text-center">
-                No requests yet.
-              </p>
+              <div className="empty-state">
+                No requests yet. Your new request will appear here.
+              </div>
             ) : (
               <div className="space-y-4">
                 {events.map((ev) => (
                   <div
                     key={ev._id}
-                    className="bg-white p-4 rounded-lg shadow-sm border border-gray-100"
+                    className="request-card"
                   >
                     {/* Top Row: Title and Status */}
                     <div className="flex justify-between items-start mb-2">
                       <div>
-                        <h4 className="font-bold text-lg">{ev.hospitalName}</h4>
-                        <p className="text-sm text-gray-600">
+                        <h4>{ev.hospitalName}</h4>
+                        <p className="job-meta">
                           {new Date(ev.date).toLocaleString()} •{" "}
                           {ev.durationHours} hrs
                         </p>
                       </div>
                       <span
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        className={`status-pill ${
                           ev.status === "open"
-                            ? "bg-green-100 text-green-800"
+                            ? "status-open"
                             : ev.status === "pending_payment"
-                              ? "bg-yellow-100 text-yellow-800"
+                              ? "status-pending"
                               : ev.status === "completed"
-                                ? "bg-gray-200 text-gray-700"
-                                : "bg-blue-100 text-blue-800"
+                                ? "status-complete"
+                                : "status-active"
                         }`}
                       >
                         {ev.status.replace("_", " ").toUpperCase()}
@@ -160,7 +195,7 @@ export default function Dashboard() {
 
                     {/* Helper Assigned Block */}
                     {ev.status === "accepted" && (
-                      <div className="mt-2 bg-blue-50 p-3 rounded text-sm text-blue-800 flex justify-between items-center">
+                      <div className="info-panel mt-3 flex flex-wrap items-center justify-between gap-3">
                         <div>
                           <strong>Helper Assigned!</strong>
                           <br />
@@ -198,14 +233,14 @@ export default function Dashboard() {
                               alert("Network error: ", err);
                             }
                           }}
-                          className="border border-red-500 text-red-600 px-4 py-2 rounded hover:bg-red-50"
+                          className="app-danger-button"
                         >
                           Cancel & Refund
                         </button>
                         {ev.helperPhone && (
                           <a
                             href={`tel:${ev.helperPhone}`}
-                            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                            className="app-primary-button"
                           >
                             Call Helper
                           </a>
@@ -215,12 +250,12 @@ export default function Dashboard() {
 
                     {/* Completed Block */}
                     {ev.status === "completed" && (
-                      <div className="mt-2 bg-gray-50 p-3 rounded text-sm text-gray-700 flex justify-between items-center">
+                      <div className="info-panel mt-3 flex flex-wrap items-center justify-between gap-3">
                         <span>Job Completed</span>
                         {!reviewedEvents.includes(ev._id) && (
                           <button
                             onClick={() => setReviewEvent(ev)}
-                            className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 text-sm"
+                            className="app-secondary-button"
                           >
                             ★ Leave Review
                           </button>
@@ -243,7 +278,7 @@ export default function Dashboard() {
             )}
           </>
         )}
-      </div>
+      </main>
 
       {reviewEvent && (
         <ReviewModal

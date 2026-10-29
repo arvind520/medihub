@@ -66,38 +66,38 @@ export default function HelperActiveJobs() {
   if (activeJobs.length === 0) return null; // Don't show anything if no active jobs
 
   return (
-    <div className="mb-10">
-      <h3 className="text-xl font-bold mb-4 text-sky-700">Your Active Jobs</h3>
+    <div>
+      <div className="workspace-section-heading mt-0">
+        <h3>Your active jobs</h3>
+        <p>Stay up to date with the visits you’re supporting.</p>
+      </div>
       <div className="space-y-4">
         {activeJobs.map((job) => (
           <div
             key={job._id}
-            className="bg-white p-4 rounded-lg shadow-md border-l-4 border-sky-500"
+            className="job-card"
           >
-            <div className="flex justify-between items-start">
+            <div className="flex flex-wrap justify-between items-start gap-4">
               <div>
-                <h4 className="font-bold text-lg">{job.hospitalName}</h4>
-                <p className="text-sm text-gray-600 mb-2">
+                <h4>{job.hospitalName}</h4>
+                <p className="job-meta">
                   {new Date(job.date).toLocaleString()} • {job.durationHours}{" "}
                   hrs
                 </p>
-                <div className="flex gap-2 mb-3">
+                <div className="tag-list mb-3">
                   {job.requirements.map((req) => (
-                    <span
-                      key={req}
-                      className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded capitalize"
-                    >
+                    <span key={req}>
                       {req}
                     </span>
                   ))}
                 </div>
-                <div className="text-sm text-gray-800 bg-gray-50 p-2 rounded border mb-3">
+                <div className="info-panel">
                   <strong>Patient Contact:</strong> {job.patientPhone || "N/A"}
                 </div>
               </div>
               <button
                 onClick={() => handleComplete(job._id)}
-                className="bg-sky-600 text-white px-4 py-2 rounded hover:bg-sky-700"
+                className="app-primary-button"
               >
                 Mark as Completed
               </button>

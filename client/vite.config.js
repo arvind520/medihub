@@ -6,6 +6,7 @@
  */
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
@@ -14,6 +15,7 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    tailwindcss(),
     VitePWA({
       registerType: "autoUpdate", // Auto-updates app when new code is pushed
       devOptions: {
@@ -23,8 +25,8 @@ export default defineConfig({
         name: "MediHelp",
         short_name: "MediHelp",
         description: "Hospital assistance at your fingertips",
-        theme_color: "#0284c7", // Sky-600 from our Tailwind colors
-        background_color: "#f0f9ff", // Sky-50
+        theme_color: "#2f725c",
+        background_color: "#fbfcfa",
         display: "standalone", // This hides the browser UI!
         orientation: "portrait",
         start_url: "/",

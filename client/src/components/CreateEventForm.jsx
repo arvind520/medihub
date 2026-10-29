@@ -139,16 +139,18 @@ export default function CreateEventForm({ onEventCreated }) {
   };
 
   return (
-    // ... (Keep the JSX form exactly as it was, just change the button text to "Pay & Submit (₹199)")
     <form
       onSubmit={handleSubmit}
-      className="bg-white p-6 rounded-lg shadow-md mb-8"
+      className="workspace-card request-form mb-8"
     >
-      <h2 className="text-xl font-bold mb-4">Create a New Request</h2>
+      <h2 className="form-title">Create a new request</h2>
+      <p className="form-description">
+        Tell us about your visit and choose the support that would help.
+      </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">
+        <div className="form-field">
+          <label>
             Hospital Name
           </label>
           <input
@@ -156,24 +158,24 @@ export default function CreateEventForm({ onEventCreated }) {
             required
             value={hospitalName}
             onChange={(e) => setHospitalName(e.target.value)}
-            className="w-full border rounded p-2"
+            className="form-control"
             placeholder="e.g. Apollo Hospital"
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Date & Time</label>
+        <div className="form-field">
+          <label>Date & Time</label>
           <input
             type="datetime-local"
             required
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="w-full border rounded p-2"
+            className="form-control"
           />
         </div>
       </div>
 
-      <div className="mb-4">
-        <label className="block text-sm font-medium mb-1">
+      <div className="form-field mb-4">
+        <label>
           Estimated Duration (Hours)
         </label>
         <input
@@ -183,17 +185,17 @@ export default function CreateEventForm({ onEventCreated }) {
           required
           value={durationHours}
           onChange={(e) => setDurationHours(e.target.value)}
-          className="w-full md:w-1/3 border rounded p-2"
+          className="form-control md:w-1/3"
         />
       </div>
 
-      <div className="mb-4">
-        <label className="block text-sm font-medium mb-2">
+      <div className="form-field mb-4">
+        <label>
           What help do you need?
         </label>
         <div className="grid grid-cols-2 gap-2">
           {options.map((opt) => (
-            <label key={opt.id} className="flex items-center gap-2 text-sm">
+            <label key={opt.id} className="requirement-option">
               <input
                 type="checkbox"
                 checked={requirements.includes(opt.id)}
@@ -206,14 +208,14 @@ export default function CreateEventForm({ onEventCreated }) {
         </div>
       </div>
 
-      <div className="mb-4">
-        <label className="block text-sm font-medium mb-1">
+      <div className="form-field mb-4">
+        <label>
           Additional Notes (Optional)
         </label>
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          className="w-full border rounded p-2"
+          className="form-control"
           rows="2"
           placeholder="e.g. I need help with my elderly father"
         />
@@ -221,7 +223,7 @@ export default function CreateEventForm({ onEventCreated }) {
       <button
         type="submit"
         disabled={loading}
-        className="bg-sky-600 text-white px-6 py-2 rounded hover:bg-sky-700 disabled:opacity-50"
+        className="app-primary-button"
       >
         {loading ? "Processing..." : "Pay & Submit (₹199)"}
       </button>

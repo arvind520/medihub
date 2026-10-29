@@ -15,7 +15,13 @@ function ProtectedRoute({ children }) {
   const { isSignedIn, isLoaded } = useAuth();
 
   // Wait for Clerk to load to avoid flashing the login screen
-  if (!isLoaded) return <div className="p-8 text-center">Loading...</div>;
+  if (!isLoaded)
+    return (
+    <div className="loading-screen" role="status">
+      <span className="brand-mark" aria-hidden="true">+</span>
+      <p>Getting your care space ready</p>
+    </div>
+  );
 
   // If not signed in, redirect to home
   if (!isSignedIn) return <Navigate to="/" replace />;
